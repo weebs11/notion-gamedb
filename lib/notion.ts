@@ -13,6 +13,68 @@ function getDatabaseId(): string {
   return id;
 }
 
+// Required database property schema (property name → Notion type config).
+// "title" is handled specially: we rename the existing title property if needed.
+const REQUIRED_SCHEMA: Record<string, Record<string, unknown>> = {
+  Name: { title: {} },
+  "RAWG ID": { number: {} },
+  Platform: { multi_select: {} },
+  Genre: { multi_select: {} },
+  Publisher: { rich_text: {} },
+  "Release Date": { date: {} },
+  Metacritic: { number: {} },
+  "Cover Image": { url: {} },
+  Status: { select: { options: [{ name: "Backlog" }] } },
+  "RAWG URL": { url: {} },
+  Rating: { number: {} },
+  "Added Date": { date: {} },
+};
+
+export async function ensureDatabaseSchema(): Promise<void> {
+  const notion = getNotionClient();
+  const databaseId = getDatabaseId();
+
+  const db = await notion.databases.retrieve({ database_id: databaseId });
+
+  const existingProps = db.properties;
+  const existingNames = new Set(Object.keys(existingProps));
+
+  // Find the current title property (every Notion DB has exactly one)
+  let titlePropName: string | null = null;
+  for (const [name, prop] of Object.entries(existingProps)) {
+    if (prop.type === "title") {
+      titlePropName = name;
+      break;
+    }
+  }
+
+  // Build update payload with missing properties
+  const propsToUpdate: Record<string, unknown> = {};
+
+  for (const [name, config] of Object.entries(REQUIRED_SCHEMA)) {
+    if (existingNames.has(name)) continue;
+
+    // Handle title: rename the existing title property instead of creating a new one
+    if ("title" in config) {
+      if (titlePropName && titlePropName !== name) {
+        propsToUpdate[titlePropName] = { name, title: {} };
+      }
+      // If titlePropName is already "Name", nothing to do
+      continue;
+    }
+
+    propsToUpdate[name] = config;
+  }
+
+  if (Object.keys(propsToUpdate).length === 0) return;
+
+  await notion.databases.update({
+    database_id: databaseId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    properties: propsToUpdate as any,
+  });
+}
+
 export async function checkDuplicates(
   rawgIds: number[]
 ): Promise<Set<number>> {
@@ -27,8 +89,8 @@ export async function checkDuplicates(
   }
 
   for (const chunk of chunks) {
-    const response = await notion.dataSources.query({
-      data_source_id: databaseId,
+    const response = await notion.databases.query({
+      database_id: databaseId,
       filter: {
         or: chunk.map((id) => ({
           property: "RAWG ID",

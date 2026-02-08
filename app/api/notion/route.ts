@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkDuplicates, addGameToNotion } from "@/lib/notion";
+import { ensureDatabaseSchema, checkDuplicates, addGameToNotion } from "@/lib/notion";
 import { getGameDetails } from "@/lib/rawg";
 import type { AddGamesResponse } from "@/lib/types";
 
@@ -13,6 +13,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    await ensureDatabaseSchema();
 
     const existingIds = await checkDuplicates(gameIds);
 
