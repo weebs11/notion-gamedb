@@ -73,7 +73,7 @@ The app auto-creates these properties if missing (see `REQUIRED_SCHEMA` in `lib/
 | Release Date | date         |
 | Metacritic   | number       |
 | Cover Image  | url          |
-| Status       | select       |
+| Status       | status       |
 | RAWG URL     | url          |
 | Rating       | number       |
 | Added Date   | date         |
@@ -86,6 +86,33 @@ The app auto-creates these properties if missing (see `REQUIRED_SCHEMA` in `lib/
 - All stored in `.env` (gitignored). Never commit env files.
 
 ## Common Tasks
+
+### Git Workflow
+
+- `main` branch auto-deploys to production (Vercel)
+- Create feature branches from `main`: `feature/feature-name`
+- PRs required for merging to `main`
+- Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
+
+### Before Pushing
+
+- Run `npm run lint` and `npm run type-check`
+- Ensure .env files are in .gitignore
+- Test locally before pushing
+
+### Deployment
+
+- Vercel auto-deploys `main` branch to production
+- Preview deployments created for all PRs
+- Environment variables managed in Vercel dashboard
+- Supabase env vars must be added to Vercel for production
+
+### Git & Deployment Rules
+
+**Never push directly to main** - Always use PRs for review
+**No force pushes** - Preserve git history
+**Deployment is automatic** - Merging to main triggers production deploy
+**API keys** - Must be added to Vercel env vars manually, never committed
 
 ### Setup
 

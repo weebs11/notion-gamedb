@@ -24,7 +24,7 @@ const REQUIRED_SCHEMA: Record<string, Record<string, unknown>> = {
   "Release Date": { date: {} },
   Metacritic: { number: {} },
   "Cover Image": { url: {} },
-  Status: { select: { options: [{ name: "Backlog" }] } },
+  Status: { status: {} },
   "RAWG URL": { url: {} },
   Rating: { number: {} },
   "Added Date": { date: {} },
@@ -158,7 +158,7 @@ export async function addGameToNotion(
       url: game.background_image,
     },
     Status: {
-      select: { name: "Backlog" },
+      status: { name: "Backlog" },
     },
     "RAWG URL": {
       url: `https://rawg.io/games/${game.slug}`,
