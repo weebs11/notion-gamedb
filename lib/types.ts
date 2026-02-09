@@ -59,6 +59,17 @@ export interface FilterValues {
   ordering: string;
 }
 
+// App mode
+
+export type AppMode = "search" | "browse";
+
+export interface ConsoleBrowseFilters {
+  genres: string[];
+  yearFrom: string;
+  yearTo: string;
+  ordering: string;
+}
+
 // API response types
 
 export interface AddGamesRequest {

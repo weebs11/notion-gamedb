@@ -16,6 +16,7 @@ const ORDERING_OPTIONS = [
   { value: "-released", label: "Release Date (Newest)" },
   { value: "released", label: "Release Date (Oldest)" },
   { value: "name", label: "Name A→Z" },
+  { value: "-name", label: "Name Z→A" },
 ];
 
 export default function SearchFilters({
