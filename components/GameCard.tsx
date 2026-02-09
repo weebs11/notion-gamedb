@@ -15,6 +15,15 @@ function metacriticColor(score: number | null): string {
   return "bg-red-900 text-red-300";
 }
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export default function GameCard({ game, selected, onToggle }: GameCardProps) {
   return (
     <div
@@ -37,19 +46,21 @@ export default function GameCard({ game, selected, onToggle }: GameCardProps) {
       {/* Game info */}
       <div className="flex-1 min-w-0">
         <div className="font-medium text-gray-100 truncate">{game.name}</div>
-        <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-400">
-          {game.released && (
-            <span>{game.released}</span>
-          )}
-          {game.platforms && game.platforms.length > 0 && (
-            <span className="truncate max-w-[300px]">
-              {game.platforms.map((p) => p.platform.name).join(", ")}
-            </span>
-          )}
-        </div>
+        {game.platforms && game.platforms.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {[...game.platforms].sort((a, b) => a.platform.name.localeCompare(b.platform.name)).map((p) => (
+              <span
+                key={p.platform.id}
+                className="px-1.5 py-0.5 text-xs bg-gray-700 border border-gray-600 text-gray-300 rounded"
+              >
+                {p.platform.name}
+              </span>
+            ))}
+          </div>
+        )}
         {game.genres && game.genres.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
-            {game.genres.map((g) => (
+            {[...game.genres].sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
               <span
                 key={g.id}
                 className="px-1.5 py-0.5 text-xs bg-gray-800 text-gray-400 rounded"
@@ -57,6 +68,11 @@ export default function GameCard({ game, selected, onToggle }: GameCardProps) {
                 {g.name}
               </span>
             ))}
+          </div>
+        )}
+        {game.released && (
+          <div className="mt-1 text-xs text-gray-400">
+            {formatDate(game.released)}
           </div>
         )}
       </div>

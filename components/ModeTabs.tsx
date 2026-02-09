@@ -32,6 +32,17 @@ export default function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
       >
         Browse by Console
       </button>
+      <button
+        type="button"
+        onClick={() => onModeChange("bulk")}
+        className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          mode === "bulk"
+            ? "bg-blue-600 text-white"
+            : "text-gray-400 hover:text-gray-200"
+        }`}
+      >
+        Paste List
+      </button>
     </div>
   );
 }

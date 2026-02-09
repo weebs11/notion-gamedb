@@ -14,6 +14,7 @@ import ModeTabs from "@/components/ModeTabs";
 import SearchFilters from "@/components/SearchFilters";
 import ConsolePicker from "@/components/ConsolePicker";
 import BrowseFilters from "@/components/BrowseFilters";
+import PasteListInput from "@/components/PasteListInput";
 import GameResults from "@/components/GameResults";
 import Pagination from "@/components/Pagination";
 import StatusMessage, { type StatusMessageData } from "@/components/StatusMessage";
@@ -47,6 +48,10 @@ export default function Home() {
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
   const [hasBrowsed, setHasBrowsed] = useState(false);
 
+  // Bulk (paste list) mode state
+  const [hasPasted, setHasPasted] = useState(false);
+  const [pasteProgress, setPasteProgress] = useState("");
+
   // Load filter options on mount
   useEffect(() => {
     fetch("/api/filters")
@@ -74,15 +79,14 @@ export default function Home() {
     setMessage(null);
     setLoading(false);
     // Reset mode-specific state
-    if (newMode === "search") {
-      setHasSearched(false);
-      setLastFilters(null);
-    } else {
-      setBrowsePlatform(null);
-      setBrowseFilters(null);
-      setExcludedIds(new Set());
-      setHasBrowsed(false);
-    }
+    setHasSearched(false);
+    setLastFilters(null);
+    setBrowsePlatform(null);
+    setBrowseFilters(null);
+    setExcludedIds(new Set());
+    setHasBrowsed(false);
+    setHasPasted(false);
+    setPasteProgress("");
   }
 
   // --- Search mode ---
@@ -228,6 +232,62 @@ export default function Home() {
     setHasBrowsed(false);
   }
 
+  // --- Bulk (paste list) mode ---
+
+  async function doPasteSearch(names: string[]) {
+    setLoading(true);
+    setHasPasted(true);
+    setMessage(null);
+    setPasteProgress("");
+
+    const allResults: RawgGameListItem[] = [];
+    const seen = new Set<number>();
+
+    try {
+      for (let i = 0; i < names.length; i++) {
+        setPasteProgress(`Searching ${i + 1} of ${names.length}...`);
+
+        const params = new URLSearchParams({
+          search: names[i],
+          page_size: "1",
+        });
+        const res = await fetch(`/api/search?${params.toString()}`);
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+          const game = data.results[0] as RawgGameListItem;
+          if (!seen.has(game.id)) {
+            seen.add(game.id);
+            allResults.push(game);
+          }
+        }
+
+        // Small delay to avoid rate limiting
+        if (i < names.length - 1) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
+      }
+
+      setGames(allResults);
+      setSelectedIds(new Set(allResults.map((g) => g.id)));
+      setTotalCount(allResults.length);
+
+      if (allResults.length === 0) {
+        setMessage({ type: "info", text: "No games found for the provided names." });
+      } else if (allResults.length < names.length) {
+        setMessage({
+          type: "info",
+          text: `Found ${allResults.length} of ${names.length} games. Some names may not have matched.`,
+        });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Search failed. Please try again." });
+    } finally {
+      setLoading(false);
+      setPasteProgress("");
+    }
+  }
+
   // --- Shared selection logic ---
 
   function toggleGame(id: number) {
@@ -248,7 +308,7 @@ export default function Home() {
   }
 
   function selectAll() {
-    if (mode === "search") {
+    if (mode === "search" || mode === "bulk") {
       setSelectedIds(new Set(games.map((g) => g.id)));
     } else {
       // Browse: select all on current page (remove from excluded)
@@ -267,7 +327,7 @@ export default function Home() {
   }
 
   function deselectAll() {
-    if (mode === "search") {
+    if (mode === "search" || mode === "bulk") {
       setSelectedIds(new Set());
     } else {
       // Browse: deselect all on current page (add to excluded)
@@ -374,7 +434,11 @@ export default function Home() {
   const totalPages = Math.ceil(totalCount / pageSize);
   const dismissMessage = useCallback(() => setMessage(null), []);
   const showResults =
-    mode === "search" ? hasSearched : hasBrowsed && browsePlatform !== null;
+    mode === "search"
+      ? hasSearched
+      : mode === "browse"
+        ? hasBrowsed && browsePlatform !== null
+        : hasPasted;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -397,7 +461,7 @@ export default function Home() {
             loading={loading}
           />
         </section>
-      ) : (
+      ) : mode === "browse" ? (
         <section className="mb-8">
           {!browsePlatform ? (
             <ConsolePicker
@@ -414,6 +478,14 @@ export default function Home() {
             />
           )}
         </section>
+      ) : (
+        <section className="mb-8">
+          <PasteListInput
+            onSubmit={doPasteSearch}
+            loading={loading}
+            progress={pasteProgress}
+          />
+        </section>
       )}
 
       {showResults && (
@@ -425,15 +497,17 @@ export default function Home() {
             onSelectAll={selectAll}
             onDeselectAll={deselectAll}
           />
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            count={totalCount}
-            onPageChange={
-              mode === "search" ? handleSearchPageChange : handleBrowsePageChange
-            }
-            loading={loading}
-          />
+          {mode !== "bulk" && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              count={totalCount}
+              onPageChange={
+                mode === "search" ? handleSearchPageChange : handleBrowsePageChange
+              }
+              loading={loading}
+            />
+          )}
         </section>
       )}
 

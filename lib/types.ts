@@ -61,7 +61,7 @@ export interface FilterValues {
 
 // App mode
 
-export type AppMode = "search" | "browse";
+export type AppMode = "search" | "browse" | "bulk";
 
 export interface ConsoleBrowseFilters {
   genres: string[];

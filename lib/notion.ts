@@ -36,7 +36,10 @@ export async function ensureDatabaseSchema(): Promise<void> {
 
   const db = await notion.databases.retrieve({ database_id: databaseId });
 
-  const existingProps = db.properties;
+  if (!("properties" in db)) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingProps = db.properties as Record<string, { type: string }>;
   const existingNames = new Set(Object.keys(existingProps));
 
   // Find the current title property (every Notion DB has exactly one)
