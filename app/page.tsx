@@ -19,7 +19,6 @@ import GameResults from "@/components/GameResults";
 import Pagination from "@/components/Pagination";
 import StatusMessage, { type StatusMessageData } from "@/components/StatusMessage";
 
-const BASE_PATH = "/notion-db";
 const SEARCH_PAGE_SIZE = 20;
 const BROWSE_PAGE_SIZE = 100;
 
@@ -55,7 +54,7 @@ export default function Home() {
 
   // Load filter options on mount
   useEffect(() => {
-    fetch(`${BASE_PATH}/api/filters`)
+    fetch("/api/filters")
       .then((r) => r.json())
       .then((data) => {
         if (!data.error) setFilterOptions(data);
@@ -114,7 +113,7 @@ export default function Home() {
     params.set("page_size", String(SEARCH_PAGE_SIZE));
 
     try {
-      const res = await fetch(`${BASE_PATH}/api/search?${params.toString()}`);
+      const res = await fetch(`/api/search?${params.toString()}`);
       const data = await res.json();
 
       if (data.error) {
@@ -168,7 +167,7 @@ export default function Home() {
       params.set("page", String(pageNum));
 
       try {
-        const res = await fetch(`${BASE_PATH}/api/browse?${params.toString()}`);
+        const res = await fetch(`/api/browse?${params.toString()}`);
         const data = await res.json();
 
         if (data.error) {
@@ -252,7 +251,7 @@ export default function Home() {
           search: names[i],
           page_size: "1",
         });
-        const res = await fetch(`${BASE_PATH}/api/search?${params.toString()}`);
+        const res = await fetch(`/api/search?${params.toString()}`);
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
@@ -366,7 +365,7 @@ export default function Home() {
     try {
       if (allIds.length <= CHUNK_SIZE) {
         // Small batch — single request
-        const res = await fetch(`${BASE_PATH}/api/notion`, {
+        const res = await fetch("/api/notion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ gameIds: allIds }),
@@ -381,7 +380,7 @@ export default function Home() {
           const chunk = allIds.slice(i, i + CHUNK_SIZE);
           setSubmitProgress(`Adding ${i + 1}–${Math.min(i + chunk.length, allIds.length)} of ${allIds.length}...`);
 
-          const res = await fetch(`${BASE_PATH}/api/notion`, {
+          const res = await fetch("/api/notion", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ gameIds: chunk }),
