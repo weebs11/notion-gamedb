@@ -32,4 +32,4 @@ npm run dev
 
 ## Deployment
 
-Push to GitHub and connect to Vercel. Set the environment variables in the Vercel dashboard.
+Push to GitHub and connect to Vercel (or just run on localhost). Set the environment variables in the Vercel dashboard.
